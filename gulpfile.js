@@ -15,7 +15,7 @@ var gulp = require('gulp'), // Сообственно Gulp JS
 
 // Собираем html из Jade
 
-var jadeTaskFunction = function (suffixArray) {
+var jadeTaskFunction = function (suffixArray, destinationDir) {
 
   var srcFilter = [];
 
@@ -35,36 +35,51 @@ var jadeTaskFunction = function (suffixArray) {
       .pipe(rename(function (path) {
         suffixArray.forEach(function (e) {
           if (path.basename.endsWith(e)) {
+            var s = ">>>> rename basename " + path.basename + " -> ";
             path.basename = path.basename.slice(0, -e.length);
+            s += path.basename;
+            console.log(s)
           }
         });
       }))
-      .pipe(gulp.dest('./public/')) // Записываем собранные файлы
+      .pipe(gulp.dest(destinationDir)) // Записываем собранные файлы
     ;
   };
 };
-gulp.task('jadeStand', jadeTaskFunction(['.all', '.stand']));
-gulp.task('jadeProduct', jadeTaskFunction(['.all', '.product']));
+gulp.task('jadeStand', jadeTaskFunction(['.all', '.stand'], './public/'));
+gulp.task('jadeProduct', jadeTaskFunction(['.all', '.product'], './build/'));
 
-gulp.task('stylus', function () {
-  gulp.src('./assets/stylus/screen.styl')
-    .pipe(stylus()) // собираем stylus
-    .on('error', console.log) // Если есть ошибки, выводим и продолжаем
-    //.pipe(myth()) // добавляем префиксы - http://www.myth.io/
-    .pipe(gulp.dest('./public/css/')) // записываем css
-  ;
-});
+var stylusTaskFunction = function (destinationDir) {
 
-gulp.task('sass', function () {
+  return function () {
 
-  gulp.src('./assets/sass/**/*.scss')
-    .pipe(sass().on('error', sass.logError))
-    .pipe(gulp.dest('./public/css/'))
-  ;
+    gulp.src('./assets/stylus/screen.styl')
+      .pipe(stylus()) // собираем stylus
+      .on('error', console.log) // Если есть ошибки, выводим и продолжаем
+      .pipe(myth()) // добавляем префиксы - http://www.myth.io/
+      .pipe(gulp.dest(destinationDir + '/css/')) // записываем css
+    ;
 
-});
+  };
 
-gulp.task('bootstrap', function () {
+};
+
+gulp.task('stylus', stylusTaskFunction('./public'));
+
+var sassTaskFunction = function (destinationDir) {
+
+  return function () {
+    gulp.src('./assets/sass/**/*.scss')
+      .pipe(sass().on('error', sass.logError))
+      .pipe(gulp.dest(destinationDir + '/css/'))
+    ;
+  };
+
+};
+
+gulp.task('sass', sassTaskFunction('./public'));
+
+gulp.task('bootstrapStand', function () {
   gulp.src('./assets/bootstrap/fonts/**/*')
     .pipe(gulp.dest('./public/fonts/'))
   ;
@@ -80,11 +95,27 @@ gulp.task('bootstrap', function () {
   ).pipe(gulp.dest('./public/js/'))
   ;
 });
+gulp.task('bootstrapProduct', function () {
+  gulp.src('./assets/bootstrap/fonts/**/*')
+    .pipe(gulp.dest('./build/fonts/'))
+  ;
+
+  gulp.src([
+    './assets/bootstrap/css/bootstrap.min.css',
+    './assets/bootstrap/css/bootstrap-theme.min.css',
+  ]).pipe(gulp.dest('./build/css/'))
+  ;
+
+  gulp.src(
+    './assets/bootstrap/js/bootstrap.min.js'
+  ).pipe(gulp.dest('./build/js/'))
+  ;
+});
 
 // Запуск сервера разработки gulp watch
 gulp.task('watch', function () {
   // Предварительная сборка проекта
-  gulp.run('bootstrap');
+  gulp.run('bootstrapStand');
   gulp.run('jadeStand');
   gulp.run('stylus');
   gulp.run('sass');
@@ -105,4 +136,8 @@ gulp.task('watch', function () {
 // СБОРКА ПРОЕКТА
 gulp.task('build', function () {
   gulp.run("jadeProduct");
+  gulp.run("bootstrapProduct");
+
+  sassTaskFunction('./build')();
+  stylusTaskFunction('./build')();
 });
