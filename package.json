@@ -18,8 +18,12 @@
     "gulp-jade": "^1.1.0",
     "gulp-livereload": "^3.8.1",
     "gulp-myth": "^1.1.0",
+    "gulp-riot": "^1.0.6",
     "gulp-sass": "^3.1.0",
     "gulp-stylus": "^2.6.0",
     "gulp-uglify": "^2.0.1"
+  },
+  "dependencies": {
+    "riot": "^3.3.0"
   }
 }

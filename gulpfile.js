@@ -3,6 +3,7 @@
 var gulp = require('gulp'), // Сообственно Gulp JS
   rename = require('gulp-rename'),
   sass = require('gulp-sass'),
+  riot = require('gulp-riot'),
   jade = require('gulp-jade'), // Плагин для Jade
   stylus = require('gulp-stylus'), // Плагин для Stylus
   livereload = require('gulp-livereload'), // Livereload для Gulp
@@ -35,10 +36,7 @@ var jadeTaskFunction = function (suffixArray, destinationDir) {
       .pipe(rename(function (path) {
         suffixArray.forEach(function (e) {
           if (path.basename.endsWith(e)) {
-            var s = ">>>> rename basename " + path.basename + " -> ";
             path.basename = path.basename.slice(0, -e.length);
-            s += path.basename;
-            console.log(s)
           }
         });
       }))
@@ -78,6 +76,43 @@ var sassTaskFunction = function (destinationDir) {
 };
 
 gulp.task('sass', sassTaskFunction('./public'));
+
+var jsTaskFunction = function (destinationDir) {
+
+  return function () {
+
+    gulp.src([
+      './assets/js/**/*.js',
+    ])
+      .pipe(concat('native.js'))
+      .pipe(gulp.dest(destinationDir + '/js/'))
+    ;
+
+    gulp.src(['./node_modules/riot/riot.js'])
+      .pipe(gulp.dest(destinationDir + '/js/'))
+    ;
+
+  };
+
+};
+
+gulp.task('js', jsTaskFunction('./public'));
+
+var riotTaskFunction = function (destinationDir) {
+
+  return function () {
+
+    gulp.src('./assets/riot/**/*.tag')
+      .pipe(riot())
+      .pipe(concat('riot_app.js'))
+      .pipe(gulp.dest(destinationDir + '/js/'))
+    ;
+
+  };
+
+};
+
+gulp.task('riot', riotTaskFunction('./public'));
 
 gulp.task('bootstrapStand', function () {
   gulp.src('./assets/bootstrap/fonts/**/*')
@@ -119,6 +154,8 @@ gulp.task('watch', function () {
   gulp.run('jadeStand');
   gulp.run('stylus');
   gulp.run('sass');
+  gulp.run('riot');
+  gulp.run('js');
 
   gulp.watch('assets/template/**/*.jade', function () {
     gulp.run('jadeStand');
@@ -131,6 +168,10 @@ gulp.task('watch', function () {
   gulp.watch('assets/sass/**/*.scss', function () {
     gulp.run('sass');
   });
+
+  gulp.watch('assets/riot/**/*.tag', function () {
+    gulp.run('riot');
+  });
 });
 
 // СБОРКА ПРОЕКТА
@@ -140,4 +181,6 @@ gulp.task('build', function () {
 
   sassTaskFunction('./build')();
   stylusTaskFunction('./build')();
+  riotTaskFunction('./build')();
+  jsTaskFunction('./build')();
 });
