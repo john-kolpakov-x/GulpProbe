@@ -32,3 +32,6 @@ gradle-app.setting
 *.css.map
 
 .idea/workspace.xml
+node_modules/
+*.log
+public/
